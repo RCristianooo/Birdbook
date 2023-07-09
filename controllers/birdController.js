@@ -15,15 +15,15 @@ const upload = multer({storage: storage})
 
 const getAllBirds = async (req, res) => {
     try {
-        const birds = await Bird.find()
-        res.render('home', {birds: birds})
+        const birds = await Bird.find().populate('owner');
+        res.render('home', {birds: birds, user: req.user})
     } catch(err) {
         console.log(err)
     }
 }
 
 const uploadPage = (req, res) => {
-    res.render('upload')
+    res.render('upload', {user: req.user})
 }
 
 const createBird = async (req, res) => {
@@ -33,7 +33,8 @@ const createBird = async (req, res) => {
         age: req.body.age,
         favoriteFood: req.body.favoriteFood,
         funFact: req.body.funFact,
-        image: req.file.filename //multer places the file info in req.file
+        image: req.file.filename, //multer places the file info in req.file
+        owner: req.user._id
     })
 
     await bird.save()
@@ -47,7 +48,7 @@ const createBird = async (req, res) => {
 const editPage = async (req, res) => {
   try {
     const bird = await Bird.findById(req.params.id)
-    res.render('edit', {bird:bird})
+    res.render('edit', {bird:bird, user: req.user})
   } catch (err) {
     console.log(err)
   }
@@ -55,21 +56,27 @@ const editPage = async (req, res) => {
 
 const updateBird = async (req, res) => {
   try {
+    let bird = await Bird.findById(req.params.id)
+    if(bird.owner.equals(req.user._id)){
     await Bird.findByIdAndUpdate(req.params.id, req.body)
+    }
     res.redirect('/')
   } catch (err) {
     console.log(err)
   }
-}
+};
 
 const deleteBird = async (req, res) => {
   try {
+    let bird = await Bird.findById(req.params.id)
+    if(bird.owner.equals(req.user._id)){
     await Bird.findByIdAndRemove(req.params.id)
+    }
     res.redirect('/')
   } catch (err) {
     console.log(err)
   }
-}
+};
 
 module.exports = {
     getAllBirds,
